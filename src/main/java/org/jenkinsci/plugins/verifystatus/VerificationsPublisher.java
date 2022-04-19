@@ -31,8 +31,10 @@ import org.kohsuke.stapler.DataBoundConstructor;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+//import java.util.logging.Level;
+//import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.jenkinsci.plugins.verifystatus.util.Localization.getLocalized;
 
@@ -42,7 +44,7 @@ public class VerificationsPublisher extends Publisher {
   public static final String EMPTY_STR = "";
 
   private static final Logger
-    LOGGER = Logger.getLogger(VerificationsPublisher.class.getName());
+    logger = LoggerFactory.getLogger(VerificationsPublisher.class.getName());
   public static final String JOB_NAME_ENV_VAR_NAME = "JOB_NAME";
   public static final String BUILD_URL_ENV_VAR_NAME = "BUILD_URL";
   public static final String
@@ -139,33 +141,38 @@ public class VerificationsPublisher extends Publisher {
     String gerritServerName = gerritNameEnvVar != null ? gerritNameEnvVar
         : trigger != null ? trigger.getServerName() : null;
     if (gerritServerName == null) {
-      logMessage(listener, "jenkins.plugin.error.gerrit.server.empty",
-          Level.SEVERE);
+	logger.info("jenkins.plugin.error.gerrit.server.empt");
+        //logMessage(listener, "jenkins.plugin.error.gerrit.server.empty",
+          //Level.SEVERE);
       return false;
     }
     IGerritHudsonTriggerConfig gerritConfig =
         GerritManagement.getConfig(gerritServerName);
     if (gerritConfig == null) {
-      logMessage(listener, "jenkins.plugin.error.gerrit.config.empty",
-          Level.SEVERE);
+        logger.info("jenkins.plugin.error.gerrit.config.empty");
+      //logMessage(listener, "jenkins.plugin.error.gerrit.config.empty",
+      //    Level.SEVERE);
       return false;
     }
 
     if (!gerritConfig.isUseRestApi()) {
-      logMessage(listener, "jenkins.plugin.error.gerrit.restapi.off",
-          Level.SEVERE);
+        logger.info("jenkins.plugin.error.gerrit.restapi.off");
+      //logMessage(listener, "jenkins.plugin.error.gerrit.restapi.off",
+        //  Level.SEVERE);
       return false;
     }
     if (gerritConfig.getGerritHttpUserName() == null) {
-      logMessage(listener, "jenkins.plugin.error.gerrit.user.empty",
-          Level.SEVERE);
+        logger.info("jenkins.plugin.error.gerrit.user.empty");
+      //logMessage(listener, "jenkins.plugin.error.gerrit.user.empty",
+       //   Level.SEVERE);
       return false;
     }
     // System Environment variables may not be enabled
     String buildUrl = getEnvVar(build, listener, BUILD_URL_ENV_VAR_NAME);
     if (buildUrl == null){
-      logMessage(listener, "jenkins.plugin.error.gerrit.sysenv.disabled",
-          Level.WARNING);
+      logger.info("jenkins.plugin.error.gerrit.sysenv.disabled");
+      //logMessage(listener, "jenkins.plugin.error.gerrit.sysenv.disabled",
+      //    Level.WARNING);
     }
 
     GerritRestApiFactory gerritRestApiFactory = new GerritRestApiFactory();
@@ -182,15 +189,17 @@ public class VerificationsPublisher extends Publisher {
       patchSetNumber = Integer.parseInt(
         getEnvVar(build, listener, GERRIT_PATCHSET_NUMBER_ENV_VAR_NAME));
     } catch (NumberFormatException e) {
-      logMessage(listener, "jenkins.plugin.info.not.gerrit.triggered",
-      Level.INFO);
-      return;
+      logger.info("jenkins.plugin.info.not.gerrit.triggered");
+      //logMessage(listener, "jenkins.plugin.info.not.gerrit.triggered",
+      //Level.INFO);
+      return false;
     }
     try {
       VerifyStatusApi verifyStatusApi = gerritApi.changes().id(changeNumber)
           .revision(patchSetNumber).verifyStatus();
-      logMessage(listener, "jenkins.plugin.connected.to.gerrit", Level.INFO,
-          new Object[] {gerritServerName, changeNumber, patchSetNumber});
+      logger.info("jenkins.plugin.connected.to.gerrit, gerritServerName:{} changeNumber: {} patchSetNumber:{}",gerritServerName, changeNumber, patchSetNumber);
+      //logMessage(listener, "jenkins.plugin.connected.to.gerrit", Level.INFO,
+        //  new Object[] {gerritServerName, changeNumber, patchSetNumber});
 
       // Create verification to Gerrit from build
       VerificationInfo data = new VerificationInfo();
@@ -258,11 +267,13 @@ public class VerificationsPublisher extends Publisher {
       VerifyInput verifyInput = new VerifyInput();
       verifyInput.verifications = jobResult;
       verifyStatusApi.verifications(verifyInput);
-      logMessage(listener, "jenkins.plugin.verification.sent", Level.INFO);
+      logger.info("jenkins.plugin.verification.sent");
+      //logMessage(listener, "jenkins.plugin.verification.sent", Level.INFO);
     } catch (RestApiException e) {
-      listener.getLogger()
-          .println("Unable to post verification: " + e.getMessage());
-      LOGGER.severe("Unable to post verification: " + e.getMessage());
+      //listener.getLogger()
+       //   .println("Unable to post verification: " + e.getMessage());
+      //LOGGER.severe("Unable to post verification: " + e.getMessage());
+      logger.info("Unable to post verification: ", e.getMessage());
       return false;
     }
 
@@ -275,14 +286,14 @@ public class VerificationsPublisher extends Publisher {
     return envVars.get(name);
   }
 
-  private void logMessage(BuildListener listener, String message, Level l,
+  /*private void logMessage(BuildListener listener, String message, Level l,
       Object... params) {
     message = getLocalized(message, params);
     if (listener != null) { // it can be it tests
       listener.getLogger().println(message);
     }
     LOGGER.log(l, message);
-  }
+  }*/
 
   // Overridden for better type safety.
   // If your plugin doesn't really define any property on Descriptor,
